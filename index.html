@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ink & Aether</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Quattrocento:wght@400;700&family=Quattrocento+Sans:wght@400;700&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <canvas id="fx-canvas"></canvas>
+
+    <!-- Custom cursor -->
+    <div id="cursor-glow"></div>
+    <div id="cursor-dot"></div>
+
+    <!-- Title Screen -->
+    <section id="title-screen" class="scene active">
+        <div class="title-container">
+            <div class="title-ink-wash"></div>
+            <h1 class="main-title">
+                <span class="title-line title-ink">INK</span>
+                <span class="title-ampersand">&</span>
+                <span class="title-line title-aether">AETHER</span>
+            </h1>
+            <p class="subtitle">a celestial cartography</p>
+            <div class="title-divider">
+                <span class="divider-star">&#10022;</span>
+            </div>
+            <p class="flavor-text">The stars are forgetting themselves.<br>You are the one who remembers.</p>
+            <button id="start-btn" class="btn-primary">
+                <span class="btn-text">Begin the Journey</span>
+                <span class="btn-glow"></span>
+            </button>
+        </div>
+        <div class="scroll-hint">
+            <span class="scroll-text">the void whispers</span>
+            <div class="scroll-line"></div>
+        </div>
+    </section>
+
+    <!-- Prologue Scene -->
+    <section id="prologue-screen" class="scene">
+        <div class="prologue-container">
+            <div class="prologue-text-wrapper">
+                <p class="prologue-line" data-delay="0">In the age before forgetting,</p>
+                <p class="prologue-line" data-delay="2">the sky was a library of light.</p>
+                <p class="prologue-line" data-delay="5">Every star, a story.</p>
+                <p class="prologue-line" data-delay="8">Every constellation, a civilization's memory.</p>
+                <p class="prologue-line" data-delay="12">But the world below turned away from the night.</p>
+                <p class="prologue-line" data-delay="16">And the stars began to dim.</p>
+                <p class="prologue-line" data-delay="20">You are the last Cartographer.</p>
+                <p class="prologue-line" data-delay="24">The ink is in your hands.</p>
+            </div>
+            <button id="prologue-continue" class="btn-primary hidden">
+                <span class="btn-text">Enter the Aetherium</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- World Map / Navigation -->
+    <section id="world-screen" class="scene">
+        <div class="world-header">
+            <h2 class="world-title">The Floating Archives</h2>
+            <p class="world-subtitle">Choose an island to restore</p>
+        </div>
+        <div id="islands-container">
+            <!-- Islands rendered by JS -->
+        </div>
+        <div class="world-footer">
+            <div class="progress-indicator">
+                <span class="progress-label">Constellations Restored</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="world-progress"></div>
+                </div>
+                <span class="progress-count" id="progress-count">0 / 5</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Constellation Game Screen -->
+    <section id="game-screen" class="scene">
+        <div class="game-ui">
+            <div class="game-header">
+                <button id="back-to-world" class="btn-icon" title="Return to Archives">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <h3 id="island-name" class="island-title">Island Name</h3>
+                <div class="game-hint" id="game-hint">Connect the stars in order</div>
+            </div>
+        </div>
+        <canvas id="constellation-canvas"></canvas>
+        <div id="narrative-panel" class="narrative-panel hidden">
+            <div class="narrative-content">
+                <div class="narrative-icon">&#10022;</div>
+                <h4 id="narrative-title"></h4>
+                <p id="narrative-text"></p>
+                <button id="narrative-close" class="btn-secondary">Continue</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ending Screen -->
+    <section id="ending-screen" class="scene">
+        <div class="ending-container">
+            <div class="ending-text-wrapper">
+                <p class="ending-line" data-delay="0">The constellations burn again.</p>
+                <p class="ending-line" data-delay="3">Not as they were,</p>
+                <p class="ending-line" data-delay="6">but as they could be.</p>
+                <p class="ending-line" data-delay="10">You did not restore the past.</p>
+                <p class="ending-line" data-delay="14">You imagined a new sky.</p>
+                <p class="ending-line" data-delay="18">And somewhere, someone looks up</p>
+                <p class="ending-line" data-delay="22">and remembers how to wonder.</p>
+            </div>
+            <button id="restart-btn" class="btn-primary hidden">
+                <span class="btn-text">Map the Sky Anew</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- Transition Overlay -->
+    <div id="transition-overlay" class="transition-overlay"></div>
+
+    <!-- Vignette -->
+    <div class="vignette"></div>
+
+    <!-- Grain Overlay -->
+    <div class="grain-overlay"></div>
+
+    <script src="data.js"></script>
+    <script src="background.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
