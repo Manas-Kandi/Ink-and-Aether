@@ -262,7 +262,7 @@ function startConstellation() {
     if (!island) return;
     
     $('island-name').textContent = island.name;
-    $('game-hint').textContent = 'Connect the stars in any order to reveal the constellation';
+    updateGameHint();
     
     // Reset constellation state
     state.constellation = {
@@ -283,6 +283,7 @@ function startConstellation() {
         animating: false,
         completed: false,
         inkTrails: [],
+        wrongTrails: [],
         particles: []
     };
     
@@ -313,31 +314,42 @@ function animateConstellation() {
     }
     cCtx.restore();
     
-    // Draw ink trails (completed connections)
+    // Draw all player connections
     for (const conn of cs.connections) {
         const sa = cs.stars[conn.a], sb = cs.stars[conn.b];
+        const isCorrect = cs.targetConnections.some(tc =>
+            (tc[0] === conn.a && tc[1] === conn.b) || (tc[0] === conn.b && tc[1] === conn.a)
+        );
+        
+        const color = isCorrect ? '201, 162, 39' : '180, 70, 50';
+        const alpha = isCorrect 
+            ? 0.4 + Math.sin(time * 0.002 + conn.a) * 0.1
+            : 0.25;
+        
         const grad = cCtx.createLinearGradient(sa.x, sa.y, sb.x, sb.y);
-        grad.addColorStop(0, `rgba(201, 162, 39, ${0.4 + Math.sin(time * 0.002) * 0.1})`);
-        grad.addColorStop(1, `rgba(201, 162, 39, ${0.4 + Math.sin(time * 0.002 + 1) * 0.1})`);
+        grad.addColorStop(0, `rgba(${color}, ${alpha})`);
+        grad.addColorStop(1, `rgba(${color}, ${alpha})`);
         
         cCtx.beginPath();
         cCtx.moveTo(sa.x, sa.y);
         cCtx.lineTo(sb.x, sb.y);
         cCtx.strokeStyle = grad;
-        cCtx.lineWidth = 2;
+        cCtx.lineWidth = isCorrect ? 2.5 : 1.5;
         cCtx.lineCap = 'round';
         cCtx.stroke();
         
-        // Glow on line
-        cCtx.beginPath();
-        cCtx.moveTo(sa.x, sa.y);
-        cCtx.lineTo(sb.x, sb.y);
-        cCtx.strokeStyle = `rgba(201, 162, 39, 0.08)`;
-        cCtx.lineWidth = 12;
-        cCtx.stroke();
+        // Glow on correct lines
+        if (isCorrect) {
+            cCtx.beginPath();
+            cCtx.moveTo(sa.x, sa.y);
+            cCtx.lineTo(sb.x, sb.y);
+            cCtx.strokeStyle = `rgba(201, 162, 39, 0.06)`;
+            cCtx.lineWidth = 14;
+            cCtx.stroke();
+        }
     }
     
-    // Draw active ink trail (while dragging or animating)
+    // Draw active ink trails (correct)
     for (const trail of cs.inkTrails) {
         const progress = Math.min(1, (time - trail.start) / trail.duration);
         const cx = trail.sx + (trail.ex - trail.sx) * progress;
@@ -347,22 +359,37 @@ function animateConstellation() {
         cCtx.moveTo(trail.sx, trail.sy);
         cCtx.lineTo(cx, cy);
         cCtx.strokeStyle = `rgba(201, 162, 39, ${0.6 * (1 - progress)})`;
+        cCtx.lineWidth = 2.5;
+        cCtx.stroke();
+        
+        if (progress >= 1) {
+            cs.inkTrails = cs.inkTrails.filter(t => t !== trail);
+        }
+    }
+    
+    // Draw wrong connection flashes
+    for (const trail of cs.wrongTrails) {
+        const progress = Math.min(1, (time - trail.start) / trail.duration);
+        const cx = trail.sx + (trail.ex - trail.sx) * progress;
+        const cy = trail.sy + (trail.ey - trail.sy) * progress;
+        
+        cCtx.beginPath();
+        cCtx.moveTo(trail.sx, trail.sy);
+        cCtx.lineTo(cx, cy);
+        cCtx.strokeStyle = `rgba(200, 80, 60, ${0.5 * (1 - progress)})`;
         cCtx.lineWidth = 2;
         cCtx.stroke();
         
-        // Ink droplets along trail
-        for (let i = 0; i < 3; i++) {
-            const t = Math.max(0, progress - i * 0.1);
-            const dx = trail.sx + (trail.ex - trail.sx) * t;
-            const dy = trail.sy + (trail.ey - trail.sy) * t;
+        // Red flash at end
+        if (progress > 0.7) {
             cCtx.beginPath();
-            cCtx.arc(dx, dy, 2 - i * 0.5, 0, Math.PI * 2);
-            cCtx.fillStyle = `rgba(201, 162, 39, ${0.3 * (1 - t)})`;
+            cCtx.arc(trail.ex, trail.ey, 12 * (1 - progress) * 3, 0, Math.PI * 2);
+            cCtx.fillStyle = `rgba(200, 80, 60, ${0.3 * (1 - progress)})`;
             cCtx.fill();
         }
         
         if (progress >= 1) {
-            cs.inkTrails = cs.inkTrails.filter(t => t !== trail);
+            cs.wrongTrails = cs.wrongTrails.filter(t => t !== trail);
         }
     }
     
@@ -551,8 +578,14 @@ function handleCanvasClick(clientX, clientY) {
                     }
                 } else {
                     playErrorSound();
+                    cs.wrongTrails.push({
+                        sx: cs.selectedStar.x, sy: cs.selectedStar.y,
+                        ex: clicked.x, ey: clicked.y,
+                        start: Date.now(), duration: 500
+                    });
                 }
                 
+                updateGameHint();
                 checkConstellationComplete();
             }, 200);
         }
@@ -573,33 +606,58 @@ cCanvas.addEventListener('touchstart', e => {
     }
 }, { passive: false });
 
+function countCorrectConnections() {
+    const cs = state.constellation;
+    let correct = 0;
+    for (const tc of cs.targetConnections) {
+        const hasConn = cs.connections.some(c =>
+            (c.a === tc[0] && c.b === tc[1]) || (c.a === tc[1] && c.b === tc[0])
+        );
+        if (hasConn) correct++;
+    }
+    return correct;
+}
+
+function updateGameHint() {
+    const island = state.currentIsland;
+    if (!island) return;
+    const correct = countCorrectConnections();
+    const total = island.constellation.connections.length;
+    const hintEl = $('game-hint');
+    if (correct === total) {
+        hintEl.textContent = 'Constellation complete! ✦';
+        hintEl.style.color = 'var(--gold)';
+    } else {
+        hintEl.textContent = `Connections found: ${correct} / ${total}`;
+        hintEl.style.color = 'var(--muted)';
+    }
+}
+
 function checkConstellationComplete() {
     const cs = state.constellation;
     const island = state.currentIsland;
+    const correct = countCorrectConnections();
+    const total = island.constellation.connections.length;
     
-    // Count unique stars connected
-    const connectedStars = new Set();
-    cs.connections.forEach(c => { connectedStars.add(c.a); connectedStars.add(c.b); });
-    
-    // Need at least all stars connected
-    if (connectedStars.size >= island.constellation.stars.length) {
+    if (correct >= total) {
         cs.completed = true;
         playSuccessSound();
         
-        // Big particle explosion
-        for (let i = 0; i < 30; i++) {
-            const star = cs.stars[Math.floor(Math.random() * cs.stars.length)];
-            cs.particles.push({
-                x: star.x, y: star.y,
-                vx: (Math.random() - 0.5) * 5,
-                vy: (Math.random() - 0.5) * 5 - 2,
-                radius: 2 + Math.random() * 4,
-                life: 2
-            });
+        // Big particle explosion at every star
+        for (const star of cs.stars) {
+            for (let i = 0; i < 6; i++) {
+                cs.particles.push({
+                    x: star.x, y: star.y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    radius: 2 + Math.random() * 4,
+                    life: 2
+                });
+            }
         }
         
-        // Show narrative after delay
-        setTimeout(() => showNarrative(island.narrative), 1500);
+        // Show narrative after particles settle
+        setTimeout(() => showNarrative(island.narrative), 2000);
     }
 }
 
