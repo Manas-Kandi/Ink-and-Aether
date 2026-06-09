@@ -61,14 +61,8 @@ canvas {
     z-index: 0;
 }
 
-#fx-canvas {
-    z-index: 1;
-    pointer-events: auto;
-}
-
 #constellation-canvas {
     z-index: 2;
-    pointer-events: auto;
 }
 
 /* ─── Custom Cursor ─── */
