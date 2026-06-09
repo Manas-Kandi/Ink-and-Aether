@@ -657,7 +657,7 @@ function checkConstellationComplete() {
         }
         
         // Show narrative after particles settle
-        setTimeout(() => showNarrative(island.narrative), 2000);
+        setTimeout(() => showNarrative(island.narrative), 1200);
     }
 }
 
@@ -666,6 +666,7 @@ function showNarrative(narrative) {
     $('narrative-title').textContent = narrative.title;
     $('narrative-text').textContent = narrative.text;
     panel.classList.remove('hidden');
+    void panel.offsetHeight; // force reflow so transition triggers
     panel.classList.add('visible');
 }
 
